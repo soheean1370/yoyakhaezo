@@ -36,5 +36,8 @@ desktop.ini
 *.safetensors
 models/
 
-# OCR outputs
-output/images/
+# OCR 추출 결과
+output/
+
+# OCR 중간 이미지
+ocr/output/

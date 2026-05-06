@@ -11,7 +11,12 @@ from PIL import Image
 
 # Windows에서 Tesseract 설치 경로
 # 본인 PC 설치 경로가 다르면 수정
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+# 설치 경로가 다르면 여기를 수정
+import platform
+
+if platform.system() == "Windows":
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 
 def pdf_to_images(pdf_path: str, image_dir: str, zoom: int = 2) -> list[str]:
@@ -76,7 +81,7 @@ def extract_text_from_image_opencv(image_path: str, processed_save_path: str | N
     # 전처리된 이미지 저장
     if processed_save_path is not None:
         os.makedirs(os.path.dirname(processed_save_path), exist_ok=True)
-        cv2.imwrite(processed_save_path, processed)
+        # cv2.imwrite(processed_save_path, processed)
 
     # OpenCV 결과는 numpy 배열이므로 PIL 이미지로 변환
     pil_image = Image.fromarray(processed)

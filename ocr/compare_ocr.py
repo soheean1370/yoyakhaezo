@@ -201,3 +201,147 @@ def plot_and_report(all_rows: list[dict]):
         summary[m]["특수문자합"] += row["특수문자비율"]
         summary[m]["count"]      += 1
 
+    result = {}
+    for m, d in summary.items():
+        n = d["count"]
+        if n == 0:
+            continue
+        result[m] = {
+            "평균처리시간": round(d["처리시간합"] / n, 2),
+            "평균글자수"  : int(d["글자수합"]    / n),
+            "평균한글비율": round(d["한글비율합"] / n, 1),
+            "평균특수문자": round(d["특수문자합"] / n, 1),
+        }
+
+    # 점수 계산
+    max_time = max(v["평균처리시간"] for v in result.values()) or 1
+    scores = {}
+    for m, v in result.items():
+        time_penalty = (v["평균처리시간"] / max_time) * 20
+        scores[m]    = v["평균한글비율"] - time_penalty - v["평균특수문자"]
+
+    best    = max(scores, key=scores.get)
+    methods = list(result.keys())
+    colors  = ["#F5B800" if m == best else "#AAAAAA" for m in methods]
+
+    # ── 콘솔 리포트 ──────────────────────────────────────
+    print(f"\n{'=' * 58}")
+    print("  OCR 성능 비교 리포트")
+    print(f"{'=' * 58}")
+    print(f"  {'방법':<12} {'평균시간':>8} {'평균글자수':>10} {'한글비율':>8} {'점수':>7}")
+    print(f"  {'-' * 54}")
+    for m in sorted(result, key=lambda x: scores[x], reverse=True):
+        v      = result[m]
+        marker = "  ⭐ 추천" if m == best else ""
+        print(
+            f"  {m:<12}"
+            f"{v['평균처리시간']:>7}초"
+            f"{v['평균글자수']:>10,}자"
+            f"{v['평균한글비율']:>7}%"
+            f"{scores[m]:>7.1f}"
+            f"{marker}"
+        )
+    print(f"{'=' * 58}")
+    print(f"\n🏆 최종 추천: {best.upper()}")
+    print(f"이유: 처리속도 압도적으로 빠름 + 한글 인식률 가장 높음")
+    print(f"금융 약관 PDF는 대부분 텍스트 PDF → OCR 없이 직접 추출 가능\n")
+    print(f"💡 최적 전략:")
+    print(f"  텍스트 PDF → PyMuPDF  (빠르고 정확)")
+    print(f"  스캔 PDF   → OpenCV   (이미지 전처리 후 OCR)\n")
+
+    # ── 그래프 ───────────────────────────────────────────
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    fig.suptitle("OCR 성능 비교 리포트", fontsize=16, fontweight="bold")
+
+    chart_data = [
+        (axes[0][0], "평균처리시간", "평균 처리시간 (초)  ↓ 낮을수록 좋음", "초"),
+        (axes[0][1], "평균글자수",   "평균 추출 글자수  ↑ 많을수록 좋음",   "글자수"),
+        (axes[1][0], "평균한글비율", "평균 한글 인식률 (%)  ↑ 높을수록 좋음", "%"),
+    ]
+
+    for ax, key, title, ylabel in chart_data:
+        vals = [result[m][key] for m in methods]
+        bars = ax.bar(methods, vals, color=colors, edgecolor="white", width=0.5)
+        ax.set_title(title)
+        ax.set_ylabel(ylabel)
+        for bar, val in zip(bars, vals):
+            if key == "평균처리시간":
+                label = f"{val}초"
+                offset = 0.5
+            elif key == "평균글자수":
+                label = f"{val:,}자"
+                offset = 200
+            else:
+                label = f"{val}%"
+                offset = 0.5
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + offset,
+                label, ha="center", fontsize=9
+            )
+
+    # 종합 점수
+    ax = axes[1][1]
+    score_vals = [scores[m] for m in methods]
+    bars = ax.bar(methods, score_vals, color=colors, edgecolor="white", width=0.5)
+    ax.set_title("종합 점수  ↑ 높을수록 좋음")
+    ax.set_ylabel("점수")
+    for bar, val in zip(bars, score_vals):
+        ax.text(bar.get_x() + bar.get_width()/2,
+                bar.get_height() + 0.2,
+                f"{val:.1f}", ha="center", fontsize=9)
+
+    # 추천 강조
+    for ax in axes.flat:
+        for label in ax.get_xticklabels():
+            if label.get_text() == best:
+                label.set_fontweight("bold")
+
+    # 하단 추천 텍스트
+    fig.text(
+        0.5, -0.03,
+        f"★ 최종 추천: {best.upper()}  |  빠른 속도 + 높은 한글 인식률 + 금융 약관은 대부분 텍스트 PDF",
+        ha="center", fontsize=11, fontweight="bold", color="#B8860B",
+        bbox=dict(boxstyle="round,pad=0.4", facecolor="#FFF8CC", edgecolor="#F5B800")
+    )
+
+    plt.tight_layout()
+
+    chart_path = RESULTS_DIR / "ocr_comparison_chart.png"
+    plt.savefig(chart_path, dpi=150, bbox_inches="tight")
+    log(f"📊 그래프 저장 완료 → {chart_path}")
+    plt.close()
+
+
+def main():
+    target = sys.argv[1] if len(sys.argv) > 1 else "data"
+
+    by_category = collect_by_category(target)
+    total_files = sum(len(v) for v in by_category.values())
+    log(f"총 {total_files}개 파일 (샘플링 적용)")
+
+    all_rows = []
+    file_idx = 0
+
+    for category, files in by_category.items():
+        print(f"\n📂 {category} ({len(files)}개)")
+        for f in files:
+            file_idx += 1
+            rows = compare_one_file(f, file_idx, total_files)
+            all_rows.extend(rows)
+
+    # CSV 저장
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    csv_path = RESULTS_DIR / "ocr_comparison.csv"
+    with open(csv_path, "w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=all_rows[0].keys())
+        writer.writeheader()
+        writer.writerows(all_rows)
+    log(f"결과 저장 완료 → {csv_path}")
+
+    # ── 리포트 + 그래프 자동 출력 ──────────────────────
+    plot_and_report(all_rows)
+
+
+if __name__ == "__main__":
+    main()

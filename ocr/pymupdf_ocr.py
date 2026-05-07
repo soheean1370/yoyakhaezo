@@ -135,7 +135,7 @@ def save_result(text: str, input_path: str, method: str = "pymupdf") -> str:
     category = get_category(input_path)
     filename = Path(input_path).stem
 
-    save_dir = Path("output") / method / category
+    save_dir = Path("output") / category
     save_dir.mkdir(parents=True, exist_ok=True)
 
     save_path = save_dir / f"{filename}.txt"
@@ -153,7 +153,7 @@ def save_skipped_file(input_path: str, reason: str, method: str = "pymupdf") -> 
     category = get_category(input_path)
     filename = Path(input_path).stem
 
-    save_dir = Path("output") / method / category / "_skipped"
+    save_dir = Path("output") / category / "_skipped"
     save_dir.mkdir(parents=True, exist_ok=True)
 
     save_path = save_dir / f"{filename}_skipped.txt"
@@ -191,7 +191,7 @@ def main():
     python ocr/pymupdf_ocr.py data/insurance
     python ocr/pymupdf_ocr.py data/insurance/sample.pdf
     """
-    target_path = sys.argv[1] if len(sys.argv) > 1 else "data/insurance"
+    target_path = sys.argv[1] if len(sys.argv) > 1 else "data"
 
     try:
         files = collect_files(target_path)
@@ -223,7 +223,7 @@ def main():
             # 전체 페이지를 하려면 max_pages=None으로 변경
             result = extract_text_pymupdf(file_path, max_pages=20)
 
-            saved_path = save_result(result, file_path, method="pymupdf")
+            saved_path = save_result(result, file_path)
 
             print(f"[저장 완료] {saved_path}")
             print(f"총 {len(result)}자 추출")

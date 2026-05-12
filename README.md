@@ -39,7 +39,15 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 5. Tesseract 설치 (별도 설치 필요)
+### 5. 환경변수 설정
+프로젝트 루트에 `.env` 파일을 생성하고 아래 값을 설정합니다.
+
+```env
+SUPABASE_URL=your_supabase_project_url(.supabase.co로 끝나야 한다)
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
+
+### 6. Tesseract 설치 (별도 설치 필요)
 
 **Mac**
 ```bash
@@ -51,7 +59,7 @@ brew install tesseract-lang
 - https://github.com/UB-Mannheim/tesseract/wiki 에서 설치파일 다운로드
 - 설치 시 "Additional language data" 에서 Korean 체크
 
-### 6. 가상환경 비활성화 (작업 끝났을 때)
+### 7. 가상환경 비활성화 (작업 끝났을 때)
 ```bash
 deactivate
 ```

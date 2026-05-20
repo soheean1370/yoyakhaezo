@@ -77,6 +77,8 @@ else:
 
     if st.button("🔍 약관 분석 시작하기"):
         # 이전 퀴즈 결과 초기화
+        category_map = {"카드": "card", "예적금": "deposit", "보험": "insurance"}
+        st.session_state["category"] = category_map[selected]
         for key in ["quizzes", "quiz_index", "quiz_score", "quiz_answers", "quiz_done"]:
             if key in st.session_state:
                 del st.session_state[key]
@@ -150,5 +152,17 @@ else:
             st.markdown(f'<div class="guide-card">{items}</div>', unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🧩 OX 퀴즈 풀러 가기"):
-            st.switch_page("pages/2_OXQUIZ.py")
+
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            if st.button("🧠 요약 결과", use_container_width=True):
+                st.switch_page("pages/3_Summary.py")
+        with col2:
+            if st.button("💡 혜택/주의/조건", use_container_width=True):
+                st.switch_page("pages/5_BenefitCautionCondition.py")
+        with col3:
+            if st.button("✅ 행동 가이드", use_container_width=True):
+                st.switch_page("pages/4_ActionGuide.py")
+        with col4:
+            if st.button("🧩 OX 퀴즈", use_container_width=True):
+                st.switch_page("pages/2_OXQUIZ.py")

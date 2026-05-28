@@ -11,42 +11,20 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# 디자인 확인용 더미 데이터
-# 실제 분석 연결 후에는 이 if 블록을 삭제하고 아래 세션 확인 코드로 바꾸면 됨
+# 페이지 간 데이터 공유
+# 1_Analysis.py에서 저장한 분석 결과를 가져옴
 # ---------------------------------------------------------
-if "result" not in st.session_state:
-    st.session_state["category"] = "card"
-    st.session_state["result"] = {
-        "summary": "이 카드는 전월 실적 조건을 충족하면 주요 생활 영역에서 할인 혜택을 받을 수 있는 상품입니다.",
-        "benefits": [
-            "전월 이용금액 조건을 충족하면 생활 영역에서 할인 혜택을 받을 수 있습니다.",
-            "온라인 쇼핑, 편의점, 교통 등 자주 사용하는 영역에서 혜택이 제공될 수 있습니다.",
-            "일정 조건 충족 시 월 통합 할인 한도 내에서 혜택이 적용됩니다.",
-        ],
-        "cautions": [
-            "전월 실적을 충족하지 못하면 혜택이 제공되지 않을 수 있습니다.",
-            "무이자할부, 세금, 상품권 구매 금액은 실적에서 제외될 수 있습니다.",
-            "혜택별 월 한도와 제외 업종을 반드시 확인해야 합니다.",
-            "일부 가맹점 또는 특정 결제 방식은 혜택 대상에서 제외될 수 있습니다.",
-        ],
-        "conditions": [
-            "전월 이용금액 기준을 충족해야 합니다.",
-            "혜택은 월 통합 한도 내에서 적용됩니다.",
-            "카드 이용 실적은 약관에서 정한 기준에 따라 산정됩니다.",
-            "할인 또는 적립 혜택은 정해진 월 한도 내에서 제공됩니다.",
-            "상품 가입 및 이용 조건은 카드사 정책에 따라 변경될 수 있습니다.",
-        ],
-    }
-
-# 실제 분석 연결 후에는 위의 더미데이터 if 블록을 삭제하고 이 코드를 사용
-# if "result" not in st.session_state:
-#     st.warning("먼저 약관 분석을 진행해주세요.")
-#     if st.button("분석 페이지로 이동"):
-#         st.switch_page("pages/1_Analysis.py")
-#     st.stop()
-
 result = st.session_state.get("result", {})
 category = st.session_state.get("category", "")
+
+# 분석 결과가 없으면 분석 페이지로 이동 안내
+if not result:
+    st.warning("먼저 약관 분석을 진행해주세요.")
+
+    if st.button("분석 페이지로 이동"):
+        st.switch_page("pages/1_Analysis.py")
+
+    st.stop()
 
 category_name_map = {
     "card": "카드",
@@ -364,6 +342,30 @@ div[data-testid="stAltairChart"] {
 .stTabs [data-baseweb="tab-border"] {
     display:none !important;
 }
+
+/* 페이지 이동 버튼 */
+.stButton button {
+    background:#F5B800 !important;
+    color:#fff !important;
+    border:none !important;
+    border-radius:50px !important;
+    font-weight:700 !important;
+    padding:0.75rem 2.5rem !important;
+    font-size:1.05rem !important;
+    width:100% !important;
+    box-shadow:none !important;
+}
+
+.stButton button:hover {
+    background:#E6A900 !important;
+    color:#fff !important;
+    border:none !important;
+}
+
+.stButton button:focus {
+    outline:none !important;
+    box-shadow:none !important;
+}
 </style>
 """,
     unsafe_allow_html=True,
@@ -657,15 +659,20 @@ else:
 
 # ---------------------------------------------------------
 # 페이지 이동 버튼
+# 현재 페이지인 혜택/주의/조건 버튼은 제외
 # ---------------------------------------------------------
 st.markdown("<br>", unsafe_allow_html=True)
 
-col1, col2, col3 = st.columns([1, 2, 1])
+col1, col2, col3 = st.columns(3, gap="large")
 
 with col1:
-    if st.button("← 요약 결과 보기"):
+    if st.button("🧠 요약 결과", use_container_width=True):
         st.switch_page("pages/3_Summary.py")
 
-with col3:
-    if st.button("행동 가이드 보기 →"):
+with col2:
+    if st.button("✅ 행동 가이드", use_container_width=True):
         st.switch_page("pages/4_ActionGuide.py")
+
+with col3:
+    if st.button("🧩 OX 퀴즈", use_container_width=True):
+        st.switch_page("pages/2_OXQUIZ.py")

@@ -16,7 +16,9 @@ st.markdown("""
 [data-testid="stSidebarNav"] { display:none; }
 .stButton button { background:#F5B800 !important; color:#fff !important;
     border:none !important; border-radius:50px !important; font-weight:700 !important;
-    padding:0.75rem 2.5rem !important; font-size:1.05rem !important; }
+    padding:0.75rem 1.25rem !important; font-size:1.05rem !important;
+    white-space:nowrap !important; text-align:center !important;
+    justify-content:center !important; }
 .card { background:#fff; border-radius:20px; padding:1.4rem 1.8rem;
         margin-bottom:1.2rem; box-shadow:0 2px 12px rgba(0,0,0,0.06); }
 .summary-card { background:#FFF8E1; border-radius:20px; padding:1.5rem 1.8rem;
@@ -33,8 +35,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-col_back, col_title = st.columns([1, 8])
+col_back, col_title = st.columns([1.1, 8.9])
 with col_back:
+    st.markdown('<div style="height:0.9rem"></div>', unsafe_allow_html=True)
     if st.button("← Home"):
         st.switch_page("app.py")
 with col_title:
@@ -46,10 +49,50 @@ with col_title:
     </div>
     """, unsafe_allow_html=True)
 
-selected = st.selectbox("약관 종류 선택", ["카드", "예적금", "보험"])
-uploaded = st.file_uploader("📄 약관 PDF를 올려주세요", type=["pdf"])
+if st.session_state.pop("set_example_category", False):
+    st.session_state["selected_category"] = "예적금"
 
-if not uploaded:
+selected = st.selectbox(
+    "약관 종류 선택",
+    ["카드", "예적금", "보험"],
+    key="selected_category",
+)
+uploaded_file = st.file_uploader("📄 약관 PDF를 올려주세요", type=["pdf"])
+
+example_file_path = Path(__file__).resolve().parent.parent / "data" / "deposit" / "kb_deposit1_2024.pdf"
+example_text_col, example_button_col = st.columns([7, 3])
+with example_text_col:
+    st.caption("파일이 없어도 예시 파일로 분석 흐름을 체험할 수 있어요.")
+with example_button_col:
+    example_button_spacer, example_button_slot = st.columns([1, 2])
+    with example_button_slot:
+        use_example_clicked = st.button("📄 예시 파일 사용하기")
+
+if use_example_clicked:
+    st.session_state["use_example_file"] = True
+    st.session_state["set_example_category"] = True
+    st.rerun()
+elif uploaded_file is not None:
+    st.session_state["use_example_file"] = False
+
+file_name = None
+file_bytes = None
+file_source = None
+
+if st.session_state.get("use_example_file"):
+    if example_file_path.exists():
+        file_name = example_file_path.name
+        file_bytes = example_file_path.read_bytes()
+        file_source = "example"
+    else:
+        st.session_state["use_example_file"] = False
+
+if file_bytes is None and uploaded_file is not None:
+    file_name = uploaded_file.name
+    file_bytes = uploaded_file.getvalue()
+    file_source = "upload"
+
+if file_bytes is None:
     st.markdown("""
     <div style="text-align:center;padding:3rem;color:#ccc">
         <div style="font-size:3rem">📂</div>
@@ -58,24 +101,29 @@ if not uploaded:
     """, unsafe_allow_html=True)
 
 else:
-    file_size_kb = round(uploaded.size / 1024, 1)
+    file_size_kb = round(len(file_bytes) / 1024, 1)
+    status_text = "✓ 예시 파일 준비 완료" if file_source == "example" else "✓ 업로드 완료"
     st.markdown(f"""
     <div style="display:flex;align-items:center;gap:1rem;background:#fff;
                 border-radius:16px;padding:1rem 1.5rem;margin-bottom:1.5rem;
                 box-shadow:0 2px 12px rgba(0,0,0,0.06)">
         <span style="font-size:2rem">📄</span>
         <div>
-            <div style="color:#222;font-weight:700">{uploaded.name}</div>
+            <div style="color:#222;font-weight:700">{file_name}</div>
             <div style="color:#999;font-size:0.85rem">{file_size_kb} KB</div>
         </div>
         <div style="margin-left:auto">
             <span style="background:#E0F7F4;color:#00897B;border:2px solid #80CBC4;
-                         border-radius:50px;padding:0.3rem 1rem;font-weight:700">✓ 업로드 완료</span>
+                         border-radius:50px;padding:0.3rem 1rem;font-weight:700">{status_text}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("🔍 약관 분석 시작하기"):
+    analysis_spacer, analysis_col = st.columns([8, 2])
+    with analysis_col:
+        start_analysis = st.button("🔍 약관 분석 시작하기")
+
+    if start_analysis:
         # 이전 퀴즈 결과 초기화
         category_map = {"카드": "card", "예적금": "deposit", "보험": "insurance"}
         st.session_state["category"] = category_map[selected]
@@ -83,7 +131,7 @@ else:
             if key in st.session_state:
                 del st.session_state[key]
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-            tmp.write(uploaded.read())
+            tmp.write(file_bytes)
             tmp_path = tmp.name
 
         try:
